@@ -2,6 +2,9 @@
   <div class="profile-menu">
     <button
       class="profile-button"
+      :title="currentUser.name"
+      :aria-expanded="isDropdownOpen ? 'true' : 'false'"
+      aria-haspopup="menu"
       @click="toggleDropdown"
       @blur="handleBlur"
     >
@@ -16,6 +19,7 @@
         height="16"
         viewBox="0 0 16 16"
         fill="none"
+        aria-hidden="true"
       >
         <path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
@@ -120,22 +124,25 @@ const handleLogout = () => {
   position: relative;
 }
 
+/* Styled for the dark sidebar footer (the menu's only placement) */
 .profile-button {
+  width: 100%;
   display: flex;
   align-items: center;
-  gap: 0.625rem;
-  padding: 0.5rem 0.875rem;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background var(--transition), border-color var(--transition);
   font-family: inherit;
+  text-align: left;
 }
 
 .profile-button:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
+  background: var(--sidebar-hover);
+  border-color: rgba(255, 255, 255, 0.14);
 }
 
 .avatar {
@@ -150,32 +157,43 @@ const handleLogout = () => {
   font-weight: 600;
   font-size: 0.75rem;
   letter-spacing: 0.025em;
+  flex-shrink: 0;
 }
 
 .profile-name {
+  flex: 1;
+  min-width: 0;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #0f172a;
+  color: var(--sidebar-active-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* Chevron points up when closed because the menu opens upward from the sidebar footer */
 .chevron {
-  color: #64748b;
-  transition: transform 0.2s ease;
-}
-
-.chevron-open {
+  color: var(--sidebar-text-muted);
+  transition: transform var(--transition);
+  flex-shrink: 0;
   transform: rotate(180deg);
 }
 
+.chevron-open {
+  transform: rotate(0deg);
+}
+
+/* Opens upward and left-aligned: the trigger sits at the bottom of the sidebar footer,
+   so a downward/right-anchored menu would be pushed off-screen or clipped */
 .dropdown-menu {
   position: absolute;
-  top: calc(100% + 0.5rem);
-  right: 0;
+  bottom: calc(100% + 0.5rem);
+  left: 0;
   min-width: 280px;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
   z-index: 1000;
   overflow: hidden;
 }

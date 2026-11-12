@@ -306,4 +306,7 @@ def get_monthly_trends():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    import os
+    # Bind to loopback by default so the API is not reachable from other machines.
+    # Set HOST=0.0.0.0 explicitly only when network access is intended.
+    uvicorn.run(app, host=os.environ.get("HOST", "127.0.0.1"), port=8001)

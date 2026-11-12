@@ -2,6 +2,9 @@
   <div class="language-switcher">
     <button
       class="language-button"
+      :title="localeName"
+      :aria-expanded="isDropdownOpen ? 'true' : 'false'"
+      aria-haspopup="listbox"
       @click="toggleDropdown"
       @blur="handleBlur"
     >
@@ -11,6 +14,7 @@
         viewBox="0 0 20 20"
         fill="none"
         class="globe-icon"
+        aria-hidden="true"
       >
         <circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.5"/>
         <path d="M3 10H17" stroke="currentColor" stroke-width="1.5"/>
@@ -25,6 +29,7 @@
         height="16"
         viewBox="0 0 16 16"
         fill="none"
+        aria-hidden="true"
       >
         <path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
@@ -93,54 +98,63 @@ const selectLanguage = (locale) => {
   position: relative;
 }
 
+/* Styled for the dark sidebar footer (the switcher's only placement) */
 .language-button {
+  width: 100%;
+  height: 40px;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.875rem;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  gap: var(--space-3);
+  padding: 0 var(--space-3);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background var(--transition), color var(--transition);
   font-family: inherit;
   font-size: 0.875rem;
-  color: #334155;
+  color: var(--sidebar-text);
+  text-align: left;
 }
 
 .language-button:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
+  background: var(--sidebar-hover);
+  color: #ffffff;
 }
 
 .globe-icon {
-  color: #64748b;
+  color: currentColor;
   flex-shrink: 0;
 }
 
 .language-label {
+  flex: 1;
   font-weight: 500;
+  white-space: nowrap;
 }
 
+/* Chevron points up when closed because the menu opens upward from the sidebar footer */
 .chevron {
-  color: #64748b;
-  transition: transform 0.2s ease;
+  color: var(--sidebar-text-muted);
+  transition: transform var(--transition);
   flex-shrink: 0;
-}
-
-.chevron-open {
   transform: rotate(180deg);
 }
 
+.chevron-open {
+  transform: rotate(0deg);
+}
+
+/* Opens upward and left-aligned so it is not pushed below the viewport from the sidebar footer */
 .dropdown-menu {
   position: absolute;
-  top: calc(100% + 0.5rem);
-  right: 0;
+  bottom: calc(100% + 0.5rem);
+  left: 0;
   min-width: 160px;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
   z-index: 1000;
   overflow: hidden;
 }
