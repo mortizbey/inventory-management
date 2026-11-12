@@ -779,6 +779,8 @@ export default {
   border-collapse: collapse;
 }
 
+/* Sticky relative to .transactions-table-container (its own overflow-y scroller), not the page,
+   so top: 0 is correct and is unaffected by the sticky app top bar (--topbar-h) */
 .transactions-table thead {
   position: sticky;
   top: 0;

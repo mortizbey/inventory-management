@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architecture | Factory Inventory Management System</title>
+<style>
+  :root {
+    --ink: #0f172a;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --panel: #f8fafc;
+    --accent: #334155;
+    --blue: #2563eb;
+    --green: #16a34a;
+    --yellow: #ca8a04;
+    --red: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    background: #ffffff;
+    line-height: 1.55;
+  }
+  header {
+    background: var(--ink);
+    color: #f8fafc;
+    padding: 40px 48px;
+  }
+  header h1 { margin: 0 0 6px; font-size: 26px; font-weight: 600; }
+  header p { margin: 0; color: #cbd5e1; font-size: 15px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 32px 48px 64px; }
+  section { margin-top: 44px; }
+  h2 {
+    font-size: 19px;
+    font-weight: 600;
+    margin: 0 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  h3 { font-size: 15px; font-weight: 600; margin: 0 0 6px; }
+  p { margin: 0 0 12px; }
+  .muted { color: var(--muted); font-size: 14px; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1px 5px;
+  }
+
+  /* Diagram */
+  .diagram {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 28px;
+  }
+  .tier {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .tier-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .boxes { display: grid; gap: 14px; }
+  .boxes.three { grid-template-columns: repeat(3, 1fr); }
+  .boxes.two { grid-template-columns: repeat(2, 1fr); }
+  .box {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 14px 16px;
+  }
+  .box strong { display: block; font-size: 14px; margin-bottom: 4px; }
+  .box span { font-size: 13px; color: var(--muted); }
+  .arrow {
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    padding: 6px 0;
+  }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--panel); font-weight: 600; color: var(--accent); }
+  td code { white-space: nowrap; }
+
+  /* Data flow steps */
+  .flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; counter-reset: step; }
+  .step {
+    position: relative;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    padding: 14px;
+    font-size: 13px;
+  }
+  .step:not(:last-child)::after {
+    content: "\2192";
+    position: absolute;
+    right: -11px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 16px;
+    background: #ffffff;
+    z-index: 1;
+  }
+  .step b { display: block; font-size: 14px; margin-bottom: 4px; }
+  .step span { color: var(--muted); }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  ul { margin: 0; padding-left: 20px; }
+  li { margin-bottom: 6px; font-size: 14px; }
+
+  .note {
+    border-left: 3px solid var(--yellow);
+    background: #fefce8;
+    padding: 12px 16px;
+    font-size: 14px;
+    border-radius: 4px;
+  }
+
+  @media (max-width: 860px) {
+    header, main { padding-left: 20px; padding-right: 20px; }
+    .boxes.three, .boxes.two, .two-col { grid-template-columns: 1fr; }
+    .flow { grid-template-columns: 1fr; gap: 10px; }
+    .step:not(:last-child)::after { content: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Factory Inventory Management System</h1>
+  <p>System architecture, technology stack, and data flow</p>
+</header>
+
+<main>
+
+  <section>
+    <h2>1. Overview</h2>
+    <p>
+      A full-stack demo for factory operations: inventory tracking across warehouses, order management,
+      demand forecasting, backlog monitoring, spending analytics, and reporting. The application is a
+      single-page Vue frontend that talks to a FastAPI backend over JSON. All data is held in memory and
+      loaded from JSON files at backend startup; there is no database.
+    </p>
+  </section>
+
+  <section>
+    <h2>2. System Architecture</h2>
+    <div class="diagram">
+      <div class="tier">
+        <div class="tier-label">Browser</div>
+        <div class="boxes two">
+          <div class="box"><strong>Vue 3 SPA</strong><span>Vite dev server, port 3000. Views, components, i18n (en, ja).</span></div>
+          <div class="box"><strong>Router and state</strong><span>vue-router (6 pages), composables for filters, locale, and user profile.</span></div>
+        </div>
+      </div>
+
+      <div class="arrow">HTTP/JSON via axios to <code>http://localhost:8001/api</code></div>
+
+      <div class="tier">
+        <div class="tier-label">Application server</div>
+        <div class="boxes three">
+          <div class="box"><strong>FastAPI</strong><span><code>server/main.py</code>. Routes, filtering, Pydantic response models. Port 8001.</span></div>
+          <div class="box"><strong>Uvicorn</strong><span>ASGI server. Binds to <code>127.0.0.1</code> by default (<code>HOST</code> overrides).</span></div>
+          <div class="box"><strong>CORS</strong><span>Currently allows all origins (<code>*</code>), for development.</span></div>
+        </div>
+      </div>
+
+      <div class="arrow">load at startup</div>
+
+      <div class="tier">
+        <div class="tier-label">Data</div>
+        <div class="boxes three">
+          <div class="box"><strong>mock_data.py</strong><span>Loads JSON files into module-level lists and dicts held in memory.</span></div>
+          <div class="box"><strong>server/data/*.json</strong><span>inventory, orders, demand_forecasts, backlog_items, spending, transactions, purchase_orders.</span></div>
+          <div class="box"><strong>Writes</strong><span>None. Changes are not persisted; restart reloads from files.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>3. Technology Stack</h2>
+    <table>
+      <thead>
+        <tr><th>Layer</th><th>Technology</th><th>Version or constraint</th><th>Role</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Frontend framework</td><td>Vue 3 (Composition API)</td><td><code>^3.4.21</code></td><td>UI components and reactivity</td></tr>
+        <tr><td>Routing</td><td>vue-router</td><td><code>^4.3.0</code></td><td>Six pages with HTML5 history mode</td></tr>
+        <tr><td>HTTP client</td><td>axios</td><td><code>^1.6.7</code></td><td>API calls from <code>client/src/api.js</code></td></tr>
+        <tr><td>Build and dev server</td><td>Vite with @vitejs/plugin-vue</td><td><code>^8.0.0</code>, <code>^6.0.0</code></td><td>Dev server on port 3000, production build to <code>client/dist/</code></td></tr>
+        <tr><td>Charts</td><td>Custom SVG and CSS Grid</td><td>No chart library</td><td>Dashboard and report visuals</td></tr>
+        <tr><td>Backend framework</td><td>FastAPI</td><td><code>&gt;=0.110.0</code></td><td>REST endpoints, validation, OpenAPI docs at <code>/docs</code></td></tr>
+        <tr><td>Validation</td><td>Pydantic</td><td><code>&gt;=2.5.0</code></td><td>Response and request models</td></tr>
+        <tr><td>ASGI server</td><td>Uvicorn</td><td><code>&gt;=0.24.0</code></td><td>Serves FastAPI on port 8001</td></tr>
+        <tr><td>Python</td><td>CPython</td><td><code>&gt;=3.11</code></td><td>Runtime, managed with <code>uv</code></td></tr>
+        <tr><td>Tests</td><td>pytest, pytest-asyncio, httpx</td><td>Dev dependencies</td><td>Backend tests in <code>tests/backend/</code> using FastAPI TestClient</td></tr>
+        <tr><td>Data</td><td>JSON files</td><td>No database</td><td>Mock data source</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>4. Frontend Structure</h2>
+    <table>
+      <thead>
+        <tr><th>Route</th><th>View</th><th>Backend data used</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>/</code></td><td>Dashboard</td><td><code>/api/dashboard/summary</code></td></tr>
+        <tr><td><code>/inventory</code></td><td>Inventory</td><td><code>/api/inventory</code>, <code>/api/inventory/{id}</code></td></tr>
+        <tr><td><code>/orders</code></td><td>Orders</td><td><code>/api/orders</code>, <code>/api/orders/{id}</code></td></tr>
+        <tr><td><code>/demand</code></td><td>Demand</td><td><code>/api/demand</code></td></tr>
+        <tr><td><code>/spending</code></td><td>Spending</td><td><code>/api/spending/*</code></td></tr>
+        <tr><td><code>/reports</code></td><td>Reports</td><td><code>/api/reports/quarterly</code>, <code>/api/reports/monthly-trends</code></td></tr>
+      </tbody>
+    </table>
+    <p class="muted" style="margin-top:12px;">
+      Backlog is also exposed by the API (<code>/api/backlog</code>) and shown in the Backlog view and detail modals.
+      Shared UI lives in <code>client/src/components/</code> (filter bar, detail modals, language switcher, profile menu).
+    </p>
+  </section>
+
+  <section>
+    <h2>5. Data Flow</h2>
+    <div class="flow">
+      <div class="step"><b>1. User action</b><span>Changes a filter (time period, warehouse, category, status) or opens a detail modal.</span></div>
+      <div class="step"><b>2. Composable</b><span><code>useFilters.js</code> updates reactive filter refs.</span></div>
+      <div class="step"><b>3. API client</b><span><code>api.js</code> builds query params, skipping values set to <code>all</code>.</span></div>
+      <div class="step"><b>4. FastAPI</b><span>Route applies filters to in-memory lists and validates the result with Pydantic.</span></div>
+      <div class="step"><b>5. Vue render</b><span>Raw data sits in refs; computed properties derive totals and charts for display.</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>6. Filtering Model</h2>
+    <div class="two-col">
+      <div>
+        <h3>Filters</h3>
+        <ul>
+          <li><strong>Time period:</strong> month (<code>YYYY-MM</code>) or quarter (<code>Q1-2025</code> to <code>Q4-2025</code>)</li>
+          <li><strong>Warehouse</strong> and <strong>category</strong>: apply to inventory, orders, and dashboard</li>
+          <li><strong>Order status</strong>: applies to orders and dashboard</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Behavior</h3>
+        <ul>
+          <li>Filters are optional query params. A value of <code>all</code> or an absent param skips that filter.</li>
+          <li>Matching is case-insensitive for category.</li>
+          <li>Inventory has no time dimension, so it ignores the month filter.</li>
+          <li>Filtering copies data and never mutates the loaded lists.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>7. API Surface</h2>
+    <table>
+      <thead>
+        <tr><th>Method and path</th><th>Purpose</th><th>Filters</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>GET /</code></td><td>Root health or info</td><td>None</td></tr>
+        <tr><td><code>GET /api/inventory</code></td><td>Inventory items</td><td>warehouse, category</td></tr>
+        <tr><td><code>GET /api/inventory/{item_id}</code></td><td>Single inventory item</td><td>None</td></tr>
+        <tr><td><code>GET /api/orders</code></td><td>Orders</td><td>warehouse, category, status, month</td></tr>
+        <tr><td><code>GET /api/orders/{order_id}</code></td><td>Single order</td><td>None</td></tr>
+        <tr><td><code>GET /api/demand</code></td><td>Demand forecasts</td><td>None</td></tr>
+        <tr><td><code>GET /api/backlog</code></td><td>Backlog items</td><td>None</td></tr>
+        <tr><td><code>GET /api/dashboard/summary</code></td><td>Summary metrics</td><td>warehouse, category, status, month</td></tr>
+        <tr><td><code>GET /api/spending/summary</code></td><td>Spending totals</td><td>None</td></tr>
+        <tr><td><code>GET /api/spending/monthly</code></td><td>Monthly spending</td><td>None</td></tr>
+        <tr><td><code>GET /api/spending/categories</code></td><td>Spending by category</td><td>None</td></tr>
+        <tr><td><code>GET /api/spending/transactions</code></td><td>Recent transactions</td><td>None</td></tr>
+        <tr><td><code>GET /api/reports/quarterly</code></td><td>Quarterly report</td><td>None</td></tr>
+        <tr><td><code>GET /api/reports/monthly-trends</code></td><td>Monthly trend data</td><td>None</td></tr>
+      </tbody>
+    </table>
+    <p class="muted" style="margin-top:12px;">All endpoints are read-only. Interactive documentation is available at <code>/docs</code> on the backend.</p>
+  </section>
+
+  <section>
+    <h2>8. Security and Deployment Notes</h2>
+    <div class="note">
+      This is a development demo. It has no authentication or authorization; the user profile shown in the UI is hard-coded
+      in <code>client/src/composables/useAuth.js</code>. CORS allows all origins, and the API base URL is hard-coded to
+      <code>localhost:8001</code>. The backend binds to <code>127.0.0.1</code> by default. Set <code>HOST</code> only when
+      network access is intended. Before any production use, add authentication, restrict CORS origins, and move the
+      API URL to configuration.
+    </div>
+  </section>
+
+  <section>
+    <h2>9. Running Locally</h2>
+    <table>
+      <thead><tr><th>Component</th><th>Command</th><th>URL</th></tr></thead>
+      <tbody>
+        <tr><td>Backend</td><td><code>cd server &amp;&amp; uv run python main.py</code></td><td><code>http://localhost:8001</code>, docs at <code>/docs</code></td></tr>
+        <tr><td>Frontend</td><td><code>cd client &amp;&amp; npm install &amp;&amp; npm run dev</code></td><td><code>http://localhost:3000</code></td></tr>
+        <tr><td>Both</td><td><code>./scripts/start.sh</code> and <code>./scripts/stop.sh</code></td><td>Same as above</td></tr>
+        <tr><td>Tests</td><td><code>cd tests &amp;&amp; uv run pytest backend/ -v</code></td><td>N/A</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+</main>
+</body>
+</html>

@@ -1,42 +1,42 @@
 <template>
+  <!-- SaaS shell: fixed-width sidebar column + fluid workspace column (see .app grid) -->
   <div class="app">
-    <header class="top-nav">
-      <div class="nav-container">
-        <div class="logo">
-          <h1>{{ t('nav.companyName') }}</h1>
-          <span class="subtitle">{{ t('nav.subtitle') }}</span>
+    <AppSidebar
+      :mobile-open="isSidebarOpen"
+      @close="isSidebarOpen = false"
+      @show-profile-details="showProfileDetails = true"
+      @show-tasks="showTasks = true"
+    />
+
+    <div class="workspace">
+      <header class="topbar">
+        <div class="topbar-row">
+          <!-- Hamburger is only displayed below 768px, where the sidebar becomes an off-canvas drawer -->
+          <button
+            type="button"
+            class="hamburger"
+            aria-controls="app-sidebar"
+            :aria-expanded="isSidebarOpen ? 'true' : 'false'"
+            :aria-label="t('nav.openMenu')"
+            @click="isSidebarOpen = true"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true">
+              <path d="M4 6h16" />
+              <path d="M4 12h16" />
+              <path d="M4 18h16" />
+            </svg>
+          </button>
+          <h1 class="topbar-title">{{ pageTitle }}</h1>
         </div>
-        <nav class="nav-tabs">
-          <router-link to="/" :class="{ active: $route.path === '/' }">
-            {{ t('nav.overview') }}
-          </router-link>
-          <router-link to="/inventory" :class="{ active: $route.path === '/inventory' }">
-            {{ t('nav.inventory') }}
-          </router-link>
-          <router-link to="/orders" :class="{ active: $route.path === '/orders' }">
-            {{ t('nav.orders') }}
-          </router-link>
-          <router-link to="/spending" :class="{ active: $route.path === '/spending' }">
-            {{ t('nav.finance') }}
-          </router-link>
-          <router-link to="/demand" :class="{ active: $route.path === '/demand' }">
-            {{ t('nav.demandForecast') }}
-          </router-link>
-          <router-link to="/reports" :class="{ active: $route.path === '/reports' }">
-            Reports
-          </router-link>
-        </nav>
-        <LanguageSwitcher />
-        <ProfileMenu
-          @show-profile-details="showProfileDetails = true"
-          @show-tasks="showTasks = true"
-        />
-      </div>
-    </header>
-    <FilterBar />
-    <main class="main-content">
-      <router-view />
-    </main>
+        <FilterBar />
+      </header>
+
+      <main class="main-content">
+        <div class="content-inner">
+          <router-view />
+        </div>
+      </main>
+    </div>
 
     <ProfileDetailsModal
       :is-open="showProfileDetails"
@@ -55,24 +55,23 @@
 </template>
 
 <script>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { api } from './api'
 import { useAuth } from './composables/useAuth'
 import { useI18n } from './composables/useI18n'
 import FilterBar from './components/FilterBar.vue'
-import ProfileMenu from './components/ProfileMenu.vue'
+import AppSidebar from './components/AppSidebar.vue'
 import ProfileDetailsModal from './components/ProfileDetailsModal.vue'
 import TasksModal from './components/TasksModal.vue'
-import LanguageSwitcher from './components/LanguageSwitcher.vue'
 
 export default {
   name: 'App',
   components: {
     FilterBar,
-    ProfileMenu,
+    AppSidebar,
     ProfileDetailsModal,
-    TasksModal,
-    LanguageSwitcher
+    TasksModal
   },
   setup() {
     const { currentUser } = useAuth()
@@ -80,6 +79,26 @@ export default {
     const showProfileDetails = ref(false)
     const showTasks = ref(false)
     const apiTasks = ref([])
+
+    // Layout state: mobile drawer visibility (desktop collapse state lives in AppSidebar)
+    const route = useRoute()
+    const isSidebarOpen = ref(false)
+
+    // Top bar title uses the same nav.* keys as the sidebar so both stay in sync across locales
+    const routeTitleKeys = {
+      '/': 'nav.overview',
+      '/inventory': 'nav.inventory',
+      '/orders': 'nav.orders',
+      '/spending': 'nav.finance',
+      '/demand': 'nav.demandForecast',
+      '/reports': 'nav.reports'
+    }
+    const pageTitle = computed(() => t(routeTitleKeys[route.path] || 'nav.companyName'))
+
+    // Close the mobile drawer after navigating
+    watch(() => route.fullPath, () => {
+      isSidebarOpen.value = false
+    })
 
     // Merge mock tasks from currentUser with API tasks
     const tasks = computed(() => {
@@ -150,6 +169,8 @@ export default {
 
     return {
       t,
+      isSidebarOpen,
+      pageTitle,
       showProfileDetails,
       showTasks,
       tasks,
@@ -162,6 +183,69 @@ export default {
 </script>
 
 <style>
+:root {
+  /* Spacing scale (4px base) */
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-12: 3rem;    /* 48px */
+
+  /* Neutrals (slate) */
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-border: #e2e8f0;
+  --color-border-strong: #cbd5e1;
+  --color-text: #0f172a;
+  --color-text-body: #334155;
+  --color-text-muted: #64748b;
+  --color-hover: #f1f5f9;
+
+  /* Brand and status */
+  --color-primary: #2563eb;
+  --color-primary-soft: #eff6ff;
+  --color-success: #059669;
+  --color-warning: #ea580c;
+  --color-danger: #dc2626;
+  --color-info: #2563eb;
+
+  /* Sidebar (dark slate) */
+  --sidebar-bg: #0f172a;
+  --sidebar-text: #cbd5e1;
+  --sidebar-text-muted: #94a3b8;
+  --sidebar-hover: #1e293b;
+  --sidebar-active-bg: #1e293b;
+  --sidebar-active-text: #ffffff;
+  --sidebar-active-indicator: #3b82f6;
+
+  /* Shape */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.12);
+
+  /* Layout */
+  --sidebar-w: 248px;
+  --sidebar-w-collapsed: 72px;
+  --topbar-h: 60px;
+  --content-max: 1440px;
+
+  /* Breakpoints (px). Media queries cannot read custom properties, so these literals are
+     mirrored in AppSidebar.vue (BREAKPOINTS). Keep both in sync.
+     < 768: off-canvas drawer + hamburger | 768-1279: icons-only rail | >= 1280: full sidebar */
+
+  /* Layering: modals already use their own higher z-index; keep them above these */
+  --z-topbar: 150;
+  --z-sidebar: 200;
+  --z-backdrop: 190;
+
+  --transition: 0.2s ease;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -170,201 +254,208 @@ export default {
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background: #f8fafc;
-  color: #1e293b;
+  background: var(--color-bg);
+  color: var(--color-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* App shell: sidebar column sizes itself (expanded/collapsed width), workspace takes the rest */
 .app {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   min-height: 100vh;
 }
 
-.top-nav {
-  background: #ffffff;
-  border-bottom: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+/* Tablet rail (768px to 1279px): the sidebar is always icons-only, so the column is fixed at rail width.
+   An expanded rail overlays the content instead of changing this column, so nothing jumps. */
+@media (min-width: 768px) and (max-width: 1279px) {
+  .app {
+    grid-template-columns: var(--sidebar-w-collapsed) minmax(0, 1fr);
+  }
+}
+
+/* min-width: 0 lets wide tables scroll inside .table-container instead of widening the grid */
+.workspace {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Sticky top bar holds the page title row and the FilterBar row */
+.topbar {
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: var(--z-topbar);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
 }
 
-.nav-container {
-  max-width: 1600px;
-  margin: 0 auto;
+.topbar-row {
+  height: var(--topbar-h);
   display: flex;
   align-items: center;
-  padding: 0 2rem;
-  height: 70px;
+  gap: var(--space-3);
+  padding: 0 var(--space-8);
 }
 
-.nav-container > .nav-tabs {
-  margin-left: auto;
-  margin-right: 1rem;
+.topbar-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.nav-container > .language-switcher {
-  margin-right: 1rem;
+.hamburger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-left: calc(-1 * var(--space-2));
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--color-text-body);
+  cursor: pointer;
+  transition: background var(--transition);
 }
 
-.logo {
-  display: flex;
-  align-items: baseline;
-  gap: 0.75rem;
+.hamburger:hover {
+  background: var(--color-hover);
 }
 
-.logo h1 {
-  font-size: 1.375rem;
-  font-weight: 700;
-  color: #0f172a;
-  letter-spacing: -0.025em;
-}
-
-.subtitle {
-  font-size: 0.813rem;
-  color: #64748b;
-  font-weight: 400;
-  padding-left: 0.75rem;
-  border-left: 1px solid #e2e8f0;
-}
-
-.nav-tabs {
-  display: flex;
-  gap: 0.25rem;
-}
-
-.nav-tabs a {
-  padding: 0.625rem 1.25rem;
-  color: #64748b;
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 0.938rem;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  position: relative;
-}
-
-.nav-tabs a:hover {
-  color: #0f172a;
-  background: #f1f5f9;
-}
-
-.nav-tabs a.active {
-  color: #2563eb;
-  background: #eff6ff;
-}
-
-.nav-tabs a.active::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: #2563eb;
+.hamburger:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .main-content {
   flex: 1;
-  max-width: 1600px;
   width: 100%;
+  padding: var(--space-6) var(--space-8);
+}
+
+/* Max-width applies to the inner content only so the gutter stays aligned with the top bar */
+.content-inner {
+  max-width: var(--content-max);
   margin: 0 auto;
-  padding: 1.5rem 2rem;
+}
+
+/* Below 768px the sidebar is an off-canvas drawer (position: fixed), so the grid is single-column */
+@media (max-width: 767px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hamburger {
+    display: inline-flex;
+  }
+
+  .topbar-row,
+  .main-content {
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+  }
 }
 
 .page-header {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-6);
 }
 
 .page-header h2 {
-  font-size: 1.875rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  color: #0f172a;
-  margin-bottom: 0.375rem;
+  color: var(--color-text);
+  margin-bottom: var(--space-1);
   letter-spacing: -0.025em;
 }
 
 .page-header p {
-  color: #64748b;
-  font-size: 0.938rem;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
 }
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.25rem;
-  margin-bottom: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
 }
 
 .stat-card {
-  background: white;
-  padding: 1.25rem;
-  border-radius: 10px;
-  border: 1px solid #e2e8f0;
-  transition: all 0.2s ease;
+  background: var(--color-surface);
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition), border-color var(--transition);
 }
 
 .stat-card:hover {
-  border-color: #cbd5e1;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-md);
 }
 
 .stat-label {
-  color: #64748b;
-  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 0.625rem;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-2);
 }
 
 .stat-value {
-  font-size: 2.25rem;
+  font-size: 2rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--color-text);
   letter-spacing: -0.025em;
 }
 
 .stat-card.warning .stat-value {
-  color: #ea580c;
+  color: var(--color-warning);
 }
 
 .stat-card.success .stat-value {
-  color: #059669;
+  color: var(--color-success);
 }
 
 .stat-card.danger .stat-value {
-  color: #dc2626;
+  color: var(--color-danger);
 }
 
 .stat-card.info .stat-value {
-  color: #2563eb;
+  color: var(--color-info);
 }
 
 .card {
-  background: white;
-  border-radius: 10px;
-  padding: 1.25rem;
-  border: 1px solid #e2e8f0;
-  margin-bottom: 1.25rem;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--space-6);
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 0.875rem;
-  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .card-title {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #0f172a;
-  letter-spacing: -0.025em;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  letter-spacing: -0.01em;
 }
 
 .table-container {
@@ -377,25 +468,26 @@ table {
 }
 
 thead {
-  background: #f8fafc;
-  border-top: 1px solid #e2e8f0;
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--color-bg);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 th {
   text-align: left;
-  padding: 0.5rem 0.75rem;
+  padding: var(--space-3) var(--space-4);
   font-weight: 600;
-  color: #475569;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 td {
-  padding: 0.5rem 0.75rem;
-  border-top: 1px solid #f1f5f9;
-  color: #334155;
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--color-hover);
+  color: var(--color-text-body);
   font-size: 0.875rem;
 }
 
@@ -404,17 +496,18 @@ tbody tr {
 }
 
 tbody tr:hover {
-  background: #f8fafc;
+  background: var(--color-bg);
 }
 
+/* Pill badges; status palettes unchanged so existing semantics stay recognizable */
 .badge {
   display: inline-block;
-  padding: 0.313rem 0.75rem;
-  border-radius: 6px;
+  padding: var(--space-1) var(--space-3);
+  border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
+  line-height: 1.25;
+  white-space: nowrap;
 }
 
 .badge.success {
@@ -469,8 +562,8 @@ tbody tr:hover {
 
 .loading {
   text-align: center;
-  padding: 3rem;
-  color: #64748b;
+  padding: var(--space-12);
+  color: var(--color-text-muted);
   font-size: 0.938rem;
 }
 
@@ -478,9 +571,9 @@ tbody tr:hover {
   background: #fef2f2;
   border: 1px solid #fecaca;
   color: #991b1b;
-  padding: 1rem;
-  border-radius: 8px;
-  margin: 1rem 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  margin: var(--space-4) 0;
   font-size: 0.938rem;
 }
 </style>
